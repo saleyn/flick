@@ -11,6 +11,24 @@ The project is an evolution of the JavaScript ETF codec implemementation
 [erlb.js](https://github.com/saleyn/erlb.js) migrated to be used by Phoenix
 applications.
 
+## Installation
+
+Add `flick` to your dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:flick, "~> 0.1"}
+  ]
+end
+```
+
+Then run:
+
+```bash
+mix deps.get
+```
+
 ## Raw WebSocket vs Phoenix Channels — which do you need?
 
 Phoenix ships two WebSocket abstractions that serve different purposes:
