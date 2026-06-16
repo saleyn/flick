@@ -1,0 +1,6 @@
+_build/
+deps/
+doc/
+.cover/
+.elixir_ls/
+erl_crash.dump
