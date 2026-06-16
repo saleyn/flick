@@ -25,7 +25,7 @@ bump-version:
 	PATCH=$$(echo $$CURRENT | cut -d. -f3); \
 	NEW="$${MAJOR}.$${MINOR}.$$((PATCH + 1))"; \
 	echo "Bumping version: $${CURRENT} -> $${NEW}"; \
-	sed -i "s/version: \"$${CURRENT}\"/version: \"$${NEW}\"/" mix.exs; \
+	sed -i "s/\(version: \+\)\"$${CURRENT}\"/\1\"$${NEW}\"/" mix.exs; \
 	sed -i 's/\({:flick,[[:space:]]*"~>\)[^"]*/\1 '"$${MAJOR}.$${MINOR}"'/' README.md; \
 	echo ""; \
 	read -p "Commit this change? [Y/n] " -n 1 -r || true; \
