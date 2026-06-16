@@ -74,7 +74,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
           if [ "$VERSION" = "$PARENT_VERSION" ]; then
-            echo "Version unchanged ($VERSION), skipping release"
+            echo "Version unchanged ($VERSION)"
           else
             echo "Version changed: $PARENT_VERSION -> $VERSION"
           fi
@@ -108,12 +108,13 @@ jobs:
             PUBLISHED_TS=$(date -u -d "$INSERTED_AT" +%s)
             NOW_TS=$(date +%s)
             AGE=$((NOW_TS - PUBLISHED_TS))
+            MIN_AGE=$((MIN_AGE_HOURS*3600))
 
             if [ "$AGE" -lt "$MIN_AGE" ]; then
               echo "Version $VERSION published $((AGE / 60)) minutes ago — will replace"
               echo "publish=replace" >> $GITHUB_OUTPUT
             else
-              echo "Version $VERSION already on Hex.pm and too old to replace — skipping publish"
+              echo "Version $VERSION already on Hex.pm and too old to replace (${AGE}s)— skipping publish"
               echo "publish=false" >> $GITHUB_OUTPUT
             fi
           fi

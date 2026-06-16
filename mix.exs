@@ -26,7 +26,7 @@ defmodule Flick.MixProject do
 
   defp package do
     [
-      files:       ~w(lib priv .formatter.exs mix.* README* LICENSE*),
+      files:       ~w(lib priv assets .formatter.exs mix.* README* LICENSE*),
       licenses:    ["MIT"],
       maintainers: ["Serge Aleynikov"],
       keywords:    ["elixir", "phoenix", "websocket", "etf", "eetf", "erlang", "term_to_binary"],
