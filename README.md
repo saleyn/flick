@@ -1,4 +1,8 @@
-# Flick
+![Flick](assets/flick-logo.png){ width=100% }
+
+[![build](https://github.com/saleyn/flick/actions/workflows/ci.yml/badge.svg)](https://github.com/saleyn/flick/actions/workflows/ci.yml)
+[![Hex.pm](https://img.shields.io/hexpm/v/flick.svg)](https://hex.pm/packages/flick)
+[![Hex.pm](https://img.shields.io/hexpm/dt/flick.svg)](https://hex.pm/packages/flick)
 
 Binary (Erlang External Term Format) WebSocket transport for Phoenix,
 decoded on the client with [flick.js](priv/flick.js) (vendored from
