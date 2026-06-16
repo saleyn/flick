@@ -1,12 +1,12 @@
 defmodule Flick.ChannelsEtfSerializerTest do
   @moduledoc """
   End-to-end coverage for `Flick.Socket.Serializer` and
-  `priv/flick_channel_serializer.js` against a real `Phoenix.Channel`.
+  `priv/flick-channel.js` against a real `Phoenix.Channel`.
 
   Starts a `Phoenix.Endpoint` (`Flick.Test.EtfEndpoint`) whose `/socket`
   websocket transport is configured with `Flick.Socket.Serializer`, mounted
   under Bandit. A Node.js script (`test/support/echo_channel_client.js`)
-  loads `flick.js`, `flick_channel_serializer.js` and the Phoenix JS client,
+  loads `flick.js`, `flick-channel.js` and the Phoenix JS client,
   connects with `Flick.ChannelSerializer`'s `encode`/`decode`, joins
   "room:lobby", pushes an "echo" event with an ETF-encoded payload, and
   prints the JSON-encoded reply it receives.
@@ -22,7 +22,7 @@ defmodule Flick.ChannelsEtfSerializerTest do
 
       T->>E: start_link (random port)
       T->>N: spawn node echo_channel_client.js flick.js phoenix.js \
-             flick_channel_serializer.js ws://.../socket
+             flick-channel.js ws://.../socket
 
       N->>E: WebSocket connect /socket/websocket?vsn=2.0.0
       N->>E: join envelope [join_ref, ref, "room:lobby", "phx_join", {}]
@@ -70,7 +70,7 @@ defmodule Flick.ChannelsEtfSerializerTest do
 
   test "a Phoenix.Channel join/push/reply round trip via ETF", %{port: port} do
     flick_js = Application.app_dir(:flick, "priv/flick.js")
-    channel_serializer_js = Application.app_dir(:flick, "priv/flick_channel_serializer.js")
+    channel_serializer_js = Application.app_dir(:flick, "priv/flick-channel.js")
     phoenix_js = Application.app_dir(:phoenix, "priv/static/phoenix.js")
 
     client_script = Path.join(__DIR__, "../support/echo_channel_client.js")

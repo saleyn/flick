@@ -9,10 +9,10 @@ defmodule Flick.InstallAndRoundtripTest do
     `priv/static/assets/js/flick.js`, and that the layout gets a `<script>`
     tag for `flick.js` inserted before the `app.js` tag.
 
-  * "mix flick.install --channels also vendors flick_channel_serializer.js"
+  * "mix flick.install --channels also vendors flick-channel.js"
     runs the install task with `--skip-layout --channels` and checks that
-    `priv/flick_channel_serializer.js` is additionally vendored to
-    `assets/vendor/flick_channel_serializer.js`.
+    `priv/flick-channel.js` is additionally vendored to
+    `assets/vendor/flick-channel.js`.
 
   * "a JS client decodes a server ETF message and echoes it back" vendors
     `flick.js` (via `--skip-layout`), starts a real Bandit/WebSock server
@@ -120,7 +120,7 @@ defmodule Flick.InstallAndRoundtripTest do
     assert flick_pos < app_pos
   end
 
-  test "mix flick.install --channels also vendors flick_channel_serializer.js", %{
+  test "mix flick.install --channels also vendors flick-channel.js", %{
     tmp_dir: tmp_dir
   } do
     install_output =
@@ -131,12 +131,12 @@ defmodule Flick.InstallAndRoundtripTest do
       end)
 
     assert install_output =~ "flick.js installed."
-    assert install_output =~ "assets/vendor/flick_channel_serializer.js  (Phoenix Channels ETF serializer)"
+    assert install_output =~ "assets/vendor/flick-channel.js  (Phoenix Channels ETF serializer)"
 
     vendored_source =
-      Application.app_dir(:flick, "priv/flick_channel_serializer.js") |> File.read!()
+      Application.app_dir(:flick, "priv/flick-channel.js") |> File.read!()
 
-    serializer_path = Path.join(tmp_dir, "assets/vendor/flick_channel_serializer.js")
+    serializer_path = Path.join(tmp_dir, "assets/vendor/flick-channel.js")
     assert File.read!(serializer_path) == vendored_source
   end
 

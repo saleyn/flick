@@ -20,7 +20,7 @@ defmodule Flick.Socket.Serializer do
   `flick.js`) when constructing the socket:
 
       import {Socket} from "phoenix"
-      import FlickChannelSerializer from "./flick_channel_serializer"
+      import FlickChannelSerializer from "./flick-channel"
 
       const socket = new Socket("/socket", {
         encode: FlickChannelSerializer.encode,
