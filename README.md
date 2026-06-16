@@ -1,4 +1,4 @@
-![Flick](assets/flick-logo.png){ width=100% }
+![Flick](assets/flick-logo.png)
 
 [![build](https://github.com/saleyn/flick/actions/workflows/ci.yml/badge.svg)](https://github.com/saleyn/flick/actions/workflows/ci.yml)
 [![Hex.pm](https://img.shields.io/hexpm/v/flick.svg)](https://hex.pm/packages/flick)
