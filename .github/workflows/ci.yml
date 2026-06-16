@@ -75,11 +75,9 @@ jobs:
 
           if [ "$VERSION" = "$PARENT_VERSION" ]; then
             echo "Version unchanged ($VERSION), skipping release"
-            echo "publish=false" >> $GITHUB_OUTPUT
-            exit 0
+          else
+            echo "Version changed: $PARENT_VERSION -> $VERSION"
           fi
-
-          echo "Version changed: $PARENT_VERSION -> $VERSION"
 
           # Find the commit that first introduced this version in mix.exs.
           COMMIT=$(git log --format='%H' -- mix.exs | \
@@ -145,6 +143,7 @@ jobs:
             echo "Publishing flick ${{ needs.detect-release.outputs.version }}"
             mix hex.publish --yes
           fi
+          echo "### :label: Release \`$VERSION\` at \`${COMMIT:0:7}\` published on hex.pm" >> $GITHUB_STEP_SUMMARY
 
       - name: Retire old versions
         env:
