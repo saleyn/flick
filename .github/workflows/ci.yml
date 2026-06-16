@@ -75,7 +75,7 @@ jobs:
 
           if [ "$VERSION" = "$PARENT_VERSION" ]; then
             echo "Version unchanged ($VERSION), skipping release"
-            echo "should_release=false" >> $GITHUB_OUTPUT
+            echo "publish=false" >> $GITHUB_OUTPUT
             exit 0
           fi
 
@@ -90,27 +90,11 @@ jobs:
 
           if [ -z "$COMMIT" ]; then
             echo "Could not find commit introducing version $VERSION, skipping"
-            echo "should_release=false" >> $GITHUB_OUTPUT
+            echo "publish=false" >> $GITHUB_OUTPUT
             exit 0
           fi
 
           echo "commit=$COMMIT" >> $GITHUB_OUTPUT
-
-          # Only proceed once the version-bump commit is at least MIN_AGE_HOURS
-          # old — gives room for amended re-publishes of the same version before
-          # it gets tagged.
-          COMMIT_TS=$(git show -s --format=%ct "$COMMIT")
-          NOW_TS=$(date +%s)
-          AGE=$((NOW_TS - COMMIT_TS))
-          MIN_AGE=$((MIN_AGE_HOURS * 3600))
-
-          if [ "$AGE" -lt "$MIN_AGE" ]; then
-            echo "Commit ${COMMIT:0:7} for version $VERSION is only $((AGE / 60)) minutes old, waiting for ${MIN_AGE_HOURS}h"
-            echo "should_release=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          echo "should_release=true" >> $GITHUB_OUTPUT
 
           # Check whether $VERSION is already published to Hex.pm.
           # This can happen when a prior CI run published but failed later
@@ -140,7 +124,7 @@ jobs:
     name: Publish to Hex.pm
     runs-on: ubuntu-latest
     needs: [detect-release]
-    if: needs.detect-release.outputs.should_release == 'true' && needs.detect-release.outputs.publish != 'false'
+    if: needs.detect-release.outputs.publish != 'false'
 
     steps:
       - uses: actions/checkout@v4
