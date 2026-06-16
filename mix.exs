@@ -41,10 +41,10 @@ defmodule Flick.MixProject do
 
   defp deps do
     [
-      {:websock_adapter, "~> 0.5.3", optional: true, only: [:test, :dev]},
-      {:ex_doc,          "~> 0.40",  only:     :dev, runtime: false},
-      {:bandit,          "~> 1.5",   only:     :test},
-      {:phoenix,         "~> 1.8",   optional: true, only: [:test, :dev]}
+      {:websock_adapter, "~> 0.5.3", optional: true, runtime: false},
+      {:phoenix,         "~> 1.8",   optional: true, runtime: false},
+      {:ex_doc,          "~> 0.40",  only: :dev,  runtime: false},
+      {:bandit,          "~> 1.5",   only: :test}
     ]
   end
 end
