@@ -132,6 +132,9 @@ jobs:
           elixir-version: "> 0"
           otp-version:    "> 0"
 
+      - name: Fetch deps
+        run: mix deps.get
+
       - name: Publish ${{ needs.detect-release.outputs.version }} to Hex.pm
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
