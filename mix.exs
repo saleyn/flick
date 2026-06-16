@@ -6,7 +6,6 @@ defmodule Flick.MixProject do
       app:               :flick,
       version:           "0.1.0",
       elixir:            "~> 1.13",
-      start_permanent:   Mix.env() == :prod,
       description:       "Binary (Erlang External Term Format) WebSocket transport for Phoenix, paired with erlb.js",
       elixirc_paths:     elixirc_paths(Mix.env()),
       package:           package(),
@@ -38,16 +37,14 @@ defmodule Flick.MixProject do
     ]
   end
 
-  def application do
-    [extra_applications: [:logger]]
-  end
+  def application, do: []
 
   defp deps do
     [
-      {:websock_adapter, "~> 0.5", optional: true},
-      {:ex_doc, "~> 0.40", only: :dev, runtime: false},
-      {:bandit, "~> 1.5", only: :test},
-      {:phoenix, "~> 1.8", optional: true}
+      {:websock_adapter, "~> 0.5.3", optional: true, only: [:test, :dev]},
+      {:ex_doc,          "~> 0.40",  only:     :dev, runtime: false},
+      {:bandit,          "~> 1.5",   only:     :test},
+      {:phoenix,         "~> 1.8",   optional: true, only: [:test, :dev]}
     ]
   end
 end

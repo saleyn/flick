@@ -94,28 +94,27 @@ defmodule Flick.InstallAndRoundtripTest do
     install_output =
       capture_io(fn ->
         File.cd!(tmp_dir, fn ->
-          Mix.Tasks.Flick.Install.run(["--layout", layout_path])
+          Mix.Tasks.Flick.Install.run(["--layout", layout_path, "--yes"])
         end)
       end)
 
-    assert install_output =~ "flick.js installed."
-    assert install_output =~ "assets/vendor/flick.js  (source of truth)"
-    assert install_output =~ "priv/static/assets/js/flick.js  (served as a static asset)"
-    assert install_output =~ "patched #{layout_path} with flick.js <script> tag"
+    assert install_output =~ "write   assets/vendor/flick.min.js.gz"
+    assert install_output =~ "write   priv/static/assets/js/flick.min.js.gz"
+    assert install_output =~ "patch   #{layout_path}"
 
-    vendored_source = Application.app_dir(:flick, "priv/flick.js") |> File.read!()
+    vendored_source = Application.app_dir(:flick, "priv/flick.min.js.gz") |> File.read!()
 
-    vendor_path = Path.join(tmp_dir, "assets/vendor/flick.js")
-    static_path = Path.join(tmp_dir, "priv/static/assets/js/flick.js")
+    vendor_path = Path.join(tmp_dir, "assets/vendor/flick.min.js.gz")
+    static_path = Path.join(tmp_dir, "priv/static/assets/js/flick.min.js.gz")
 
     assert File.read!(vendor_path) == vendored_source
     assert File.read!(static_path) == vendored_source
 
     layout = File.read!(layout_path)
-    assert layout =~ ~s(<script src={~p"/assets/js/flick.js"}></script>)
+    assert layout =~ ~s(<script src={~p"/assets/js/flick.min.js"}></script>)
 
     # the flick.js script tag must come before the app.js one
-    {flick_pos, _} = :binary.match(layout, "/assets/js/flick.js")
+    {flick_pos, _} = :binary.match(layout, "/assets/js/flick.min.js")
     {app_pos,   _} = :binary.match(layout, "/assets/js/app.js")
     assert flick_pos < app_pos
   end
@@ -126,17 +125,17 @@ defmodule Flick.InstallAndRoundtripTest do
     install_output =
       capture_io(fn ->
         File.cd!(tmp_dir, fn ->
-          Mix.Tasks.Flick.Install.run(["--skip-layout", "--channels"])
+          Mix.Tasks.Flick.Install.run(["--skip-layout", "--channels", "--yes"])
         end)
       end)
 
-    assert install_output =~ "flick.js installed."
-    assert install_output =~ "assets/vendor/flick-channel.js  (Phoenix Channels ETF serializer)"
+    assert install_output =~ "write   assets/vendor/flick.min.js.gz"
+    assert install_output =~ "write   assets/vendor/flick-channel.min.js.gz"
 
     vendored_source =
-      Application.app_dir(:flick, "priv/flick-channel.js") |> File.read!()
+      Application.app_dir(:flick, "priv/flick-channel.min.js.gz") |> File.read!()
 
-    serializer_path = Path.join(tmp_dir, "assets/vendor/flick-channel.js")
+    serializer_path = Path.join(tmp_dir, "assets/vendor/flick-channel.min.js.gz")
     assert File.read!(serializer_path) == vendored_source
   end
 
@@ -144,16 +143,18 @@ defmodule Flick.InstallAndRoundtripTest do
     install_output =
       capture_io(fn ->
         File.cd!(tmp_dir, fn ->
-          Mix.Tasks.Flick.Install.run(["--skip-layout"])
+          Mix.Tasks.Flick.Install.run(["--skip-layout", "--yes"])
         end)
       end)
 
-    assert install_output =~ "flick.js installed."
-    assert install_output =~ "window.Flick.decode(event.data)"
-    refute install_output =~ "patched"
+    assert install_output =~ "write   priv/static/assets/js/flick.min.js.gz"
+    refute install_output =~ "patch"
 
-    static_path = Path.join(tmp_dir, "priv/static/assets/js/flick.js")
-    assert File.exists?(static_path)
+    static_gz_path = Path.join(tmp_dir, "priv/static/assets/js/flick.min.js.gz")
+    assert File.exists?(static_gz_path)
+
+    # Node.js needs the uncompressed JS; use the priv source directly.
+    static_path = Application.app_dir(:flick, "priv/flick.js")
 
     :persistent_term.put({Flick.Test.EchoRouter, :test_pid}, self())
 
