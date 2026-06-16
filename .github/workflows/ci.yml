@@ -1,10 +1,17 @@
 name: build
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+
+env:
+  MIN_AGE_HOURS: 1
+  KEEP_RELEASES: 3
 
 jobs:
   test:
@@ -22,7 +29,7 @@ jobs:
       - uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ matrix.elixir }}
-          otp-version: ${{ matrix.otp }}
+          otp-version:    ${{ matrix.otp }}
 
       - name: Cache deps
         uses: actions/cache@v4
@@ -39,3 +46,159 @@ jobs:
 
       - name: Test
         run:  make test
+
+  detect-release:
+    name: Detect Release
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      should_release: ${{ steps.resolve.outputs.should_release }}
+      version:        ${{ steps.resolve.outputs.version }}
+      commit:         ${{ steps.resolve.outputs.commit }}
+      publish:        ${{ steps.resolve.outputs.publish }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve release version
+        id: resolve
+        run: |
+          get_version() { grep -oP 'version:\s+"[^"]+"' "$1" | grep -oP '"\K[^"]+' | head -1; }
+
+          APP="flick"
+          VERSION=$(get_version mix.exs)
+          PARENT_VERSION=$(git show "HEAD^:mix.exs" 2>/dev/null | grep -oP 'version:\s+"[^"]+"' | grep -oP '"\K[^"]+' | head -1 || true)
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          if [ "$VERSION" = "$PARENT_VERSION" ]; then
+            echo "Version unchanged ($VERSION), skipping release"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Version changed: $PARENT_VERSION -> $VERSION"
+
+          # Find the commit that first introduced this version in mix.exs.
+          COMMIT=$(git log --format='%H' -- mix.exs | \
+                   while read sha; do \
+                     VER=$(git show "$sha:mix.exs" | grep -oP 'version:\s+"[^"]+"' | grep -oP '"\K[^"]+' | head -1); \
+                     if [ "$VER" = "$VERSION" ]; then echo "$sha"; break; fi; \
+                   done)
+
+          if [ -z "$COMMIT" ]; then
+            echo "Could not find commit introducing version $VERSION, skipping"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "commit=$COMMIT" >> $GITHUB_OUTPUT
+
+          # Only proceed once the version-bump commit is at least MIN_AGE_HOURS
+          # old — gives room for amended re-publishes of the same version before
+          # it gets tagged.
+          COMMIT_TS=$(git show -s --format=%ct "$COMMIT")
+          NOW_TS=$(date +%s)
+          AGE=$((NOW_TS - COMMIT_TS))
+          MIN_AGE=$((MIN_AGE_HOURS * 3600))
+
+          if [ "$AGE" -lt "$MIN_AGE" ]; then
+            echo "Commit ${COMMIT:0:7} for version $VERSION is only $((AGE / 60)) minutes old, waiting for ${MIN_AGE_HOURS}h"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "should_release=true" >> $GITHUB_OUTPUT
+
+          # Check whether $VERSION is already published to Hex.pm.
+          # This can happen when a prior CI run published but failed later
+          # (e.g. during tagging), so the workflow needs to decide whether
+          # to republish (replace) or skip entirely.
+          INSERTED_AT=$(curl -fsS "https://hex.pm/api/packages/$APP" | \
+                        jq -r --arg v "$VERSION" '.releases[] | select(.version == $v) | .inserted_at')
+
+          if [ -z "$INSERTED_AT" ]; then
+            echo "Version $VERSION not yet on Hex.pm — will publish"
+            echo "publish=true" >> $GITHUB_OUTPUT
+          else
+            PUBLISHED_TS=$(date -u -d "$INSERTED_AT" +%s)
+            NOW_TS=$(date +%s)
+            AGE=$((NOW_TS - PUBLISHED_TS))
+
+            if [ "$AGE" -lt "$MIN_AGE" ]; then
+              echo "Version $VERSION published $((AGE / 60)) minutes ago — will replace"
+              echo "publish=replace" >> $GITHUB_OUTPUT
+            else
+              echo "Version $VERSION already on Hex.pm and too old to replace — skipping publish"
+              echo "publish=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+  publish-to-hex:
+    name: Publish to Hex.pm
+    runs-on: ubuntu-latest
+    needs: [detect-release]
+    if: needs.detect-release.outputs.should_release == 'true' && needs.detect-release.outputs.publish != 'false'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "> 0"
+          otp-version:    "> 0"
+
+      - name: Publish ${{ needs.detect-release.outputs.version }} to Hex.pm
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+        run: |
+          if [ "${{ needs.detect-release.outputs.publish }}" = "replace" ]; then
+            echo "Replacing flick ${{ needs.detect-release.outputs.version }}"
+            mix hex.publish --yes --replace
+          else
+            echo "Publishing flick ${{ needs.detect-release.outputs.version }}"
+            mix hex.publish --yes
+          fi
+
+      - name: Retire old versions
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+        run: |
+          set +e
+          APP="flick"
+
+          # Releases are returned newest-first.
+          VSNS=$(curl -fsS "https://hex.pm/api/packages/$APP" | jq -r '.releases[].version')
+
+          if [ -z "$VSNS" ]; then
+            echo "$APP: no releases found on Hex.pm"
+            exit 0
+          fi
+
+          echo "Releases (newest first):"
+          printf '%s\n' "$VSNS"
+
+          KEEP=$(printf '%s\n' "$VSNS" | head -n "$KEEP_RELEASES")
+          CANDIDATES=$(printf '%s\n' "$VSNS" | tail -n +"$((KEEP_RELEASES + 1))")
+
+          if [ -z "$CANDIDATES" ]; then
+            echo "$APP: $KEEP_RELEASES or fewer releases, nothing to retire"
+            exit 0
+          fi
+
+          echo "Keeping latest $KEEP_RELEASES versions:"
+          printf '%s\n' "$KEEP"
+
+          for VSN in $CANDIDATES; do
+            RETIREMENT=$(curl -fsS "https://hex.pm/api/packages/$APP/releases/$VSN" | jq -r '.retirement')
+            if [ "$RETIREMENT" = "null" ]; then
+              echo "Retiring $APP $VSN..."
+              mix hex.retire $APP $VSN deprecated --message "Superseded by a newer release"
+            else
+              echo "$APP $VSN already retired, skipping"
+            fi
+          done
