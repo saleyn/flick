@@ -27,6 +27,16 @@ defmodule Flick.Socket.Serializer do
         decode: FlickChannelSerializer.decode
       })
 
+  ## Decoding safety
+
+  Incoming binaries are decoded with `:erlang.binary_to_term/2` using the
+  `:safe` option, which rejects atom creation and executable terms (funs).
+  If the optional `:plug_crypto` dependency is present, `decode!/2` instead
+  calls `Plug.Crypto.non_executable_binary_to_term/2` (also with `:safe`),
+  which guarantees rejection of executable terms regardless of OTP version.
+  `mix flick.install` requires `{:plug_crypto, "~> 1.2 or ~> 2.0"}` in your
+  deps by default; pass `--no-plug-crypto` to opt out.
+
   ## Caveats
 
   `join_ref`, `ref`, `topic`, and `event` are always coerced to/from
@@ -68,7 +78,7 @@ defmodule Flick.Socket.Serializer do
   def decode!(payload, opts) do
     case Keyword.fetch!(opts, :opcode) do
       :binary ->
-        [join_ref, ref, topic, event, payload] = :erlang.binary_to_term(payload, [:safe])
+        [join_ref, ref, topic, event, payload] = binary_to_term(payload)
 
         %Message{
           join_ref: to_ref_string(join_ref),
@@ -79,6 +89,20 @@ defmodule Flick.Socket.Serializer do
         }
     end
   end
+
+  defp binary_to_term(payload) do
+    case :persistent_term.get(:plug_crypto, nil) do
+      nil ->
+        loaded = Code.ensure_loaded?(Plug.Crypto)
+        :persistent_term.put(:plug_crypto, loaded)
+        binary_to_term(payload, loaded)
+      loaded ->
+        binary_to_term(payload, loaded)
+    end
+  end
+
+  defp binary_to_term(bin, true),  do: Plug.Crypto.non_executable_binary_to_term(bin, [:safe])
+  defp binary_to_term(bin, false), do: :erlang.binary_to_term(bin, [:safe])
 
   defp to_ref_string(nil), do: nil
   defp to_ref_string(ref), do: to_string(ref)

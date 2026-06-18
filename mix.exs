@@ -43,6 +43,7 @@ defmodule Flick.MixProject do
     [
       {:websock_adapter, "~> 0.5.3", optional: true, runtime: false},
       {:phoenix,         "~> 1.8",   optional: true, runtime: false},
+      {:plug_crypto,     "~> 1.2 or ~> 2.0", optional: true},
       {:ex_doc,          "~> 0.40",  only: :dev,  runtime: false},
       {:bandit,          "~> 1.5",   only: :test}
     ]

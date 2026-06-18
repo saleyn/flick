@@ -167,6 +167,19 @@ Available options (`mix help flick.install` for the full list):
 - `--skip-layout` — skip the `<script>` tag patch
 - `--channels` — also vendor `flick-channel.min.js.gz`
 - `--no-boilerplate` — vendor JS and patch layout only (skip the server/JS boilerplate)
+- `--no-plug-crypto` — opt out of hardened decoding of untrusted client
+  payloads. `Flick.Socket.Serializer` always decodes incoming binaries with
+  the `:safe` option, which blocks two dangerous things a malicious client
+  could otherwise smuggle into a term: creating new atoms (an unbounded atom
+  table exhausts memory and crashes the VM, since atoms are never garbage
+  collected) and constructing funs. However, plain `:erlang.binary_to_term/2`
+  with `:safe` has historically had OTP-version-dependent gaps in fun
+  rejection. `Plug.Crypto.non_executable_binary_to_term/2` closes that gap
+  with an explicit, audited check, guaranteeing funs are rejected regardless
+  of OTP version. By default the installer requires `:plug_crypto` as a
+  dependency so `decode!/2` uses it instead of `:erlang.binary_to_term/2`
+  directly; pass this flag to skip that requirement and rely on
+  `:erlang.binary_to_term/2` with `:safe` alone.
 - `--yes` — skip the confirmation prompt
 
 ### 3. Fill in your business logic

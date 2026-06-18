@@ -28,6 +28,7 @@ defmodule Mix.Tasks.Flick.Install do
       mix flick.install --layout lib/my_app_web/components/layouts/root.html.heex
       mix flick.install --no-boilerplate
       mix flick.install --yes
+      mix flick.install --channels --no-plug-crypto
 
   ## Options
 
@@ -45,6 +46,14 @@ defmodule Mix.Tasks.Flick.Install do
       installation without re-running the boilerplate generator.
     * `--no-boilerplate` - only vendor the JS files and patch the layout;
       skip steps 3–6.
+    * `--no-plug-crypto` - skip the `:plug_crypto` dependency check.
+      By default, the installer requires `:plug_crypto` so that
+      `Flick.Socket.Serializer.decode!/2` calls
+      `Plug.Crypto.non_executable_binary_to_term/2` instead of
+      `:erlang.binary_to_term/2` for decoding client payloads, guaranteeing
+      rejection of executable terms regardless of OTP version. Pass this
+      flag to opt out and rely on `:erlang.binary_to_term/2` with `:safe`
+      alone.
     * `--yes` - apply all changes without prompting for confirmation.
   """
   @shortdoc "Installs flick into a Phoenix project"
@@ -64,11 +73,13 @@ defmodule Mix.Tasks.Flick.Install do
           no_boilerplate: :boolean,
           module: :string,
           path: :string,
+          plug_crypto: :boolean,
           yes: :boolean
         ]
       )
 
     check_websock_adapter!()
+    check_plug_crypto!(opts[:plug_crypto])
 
     app_name   = Mix.Project.config()[:app] |> to_string()
     web_module = Macro.camelize(app_name) <> "Web"
@@ -309,6 +320,24 @@ defmodule Mix.Tasks.Flick.Install do
           {:websock_adapter, "~> 0.5"}
 
       Then run `mix deps.get` and retry.
+      """)
+    end
+  end
+
+  defp check_plug_crypto!(false), do: :ok
+
+  defp check_plug_crypto!(_) do
+    deps = Mix.Project.config()[:deps] || []
+
+    unless Enum.any?(deps, fn dep -> elem(dep, 0) == :plug_crypto end) do
+      Mix.raise("""
+      :flick requires the :plug_crypto dependency. Add it to your mix.exs:
+
+          {:plug_crypto, "~> 1.2 or ~> 2.0"}
+
+      Then run `mix deps.get` and retry, or pass --no-plug-crypto to skip
+      this check and decode with :erlang.binary_to_term/2 alone using `:safe`
+      option.
       """)
     end
   end
