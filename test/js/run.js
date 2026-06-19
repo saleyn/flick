@@ -32,6 +32,16 @@ global.deepEqual = (actual, expected, message) => {
   }
 };
 
+global.throws = (fn, message) => {
+  try {
+    assert.throws(fn);
+    console.log(`ok - ${message}`);
+  } catch (e) {
+    failures++;
+    console.error(`not ok - ${message}\n  ${e.message}`);
+  }
+};
+
 function runScript(file) {
   const code = fs.readFileSync(file, "utf8");
   vm.runInThisContext(code, { filename: file });

@@ -18,7 +18,7 @@ Add `flick` to your dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:flick, "~> 0.1"}
+    {:flick, "~> 0.2"}
   ]
 end
 ```

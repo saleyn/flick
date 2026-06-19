@@ -4,7 +4,7 @@ defmodule Flick.MixProject do
   def project do
     [
       app:               :flick,
-      version:           "0.1.3",
+      version:           "0.2.0",
       elixir:            "~> 1.13",
       description:       "Binary (Erlang External Term Format) WebSocket transport for Phoenix, paired with erlb.js",
       elixirc_paths:     elixirc_paths(Mix.env()),

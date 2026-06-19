@@ -477,6 +477,10 @@ Flick.prototype.encode_number = function(obj, dv, offset) {
 }
 
 Flick.prototype.encode_float = function(obj, dv, offset) {
+    // NaN/Infinity/-Infinity would encode fine here but Erlang's
+    // binary_to_term rejects non-finite NEW_FLOAT values with badarg.
+    if (!Number.isFinite(obj))
+        throw new Error(`Cannot encode non-finite float: ${obj}`);
     dv.setUint8(offset++, this.Enum.NEW_FLOAT);
     dv.setFloat64(offset, obj);
     return { data: dv, offset: offset+8 };

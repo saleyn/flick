@@ -51,23 +51,28 @@ function flick_test() {
     doTest('#map{"a" => 1, "b" => 2}',
         {a:1,b:2},                              [131,116,0,0,0,2,107,0,1,97,97,1,107,0,1,98,97,2], {mapKeyType: 'string'});
 
+    // -- Test rejection of non-finite floats --
+    throws(() => Flick.encode(NaN),       "Encode float(NaN) throws");
+    throws(() => Flick.encode(Infinity),  "Encode float(Infinity) throws");
+    throws(() => Flick.encode(-Infinity), "Encode float(-Infinity) throws");
+
     // -- Test stringification --
-    equal(Flick.toString("abc"),                  '"abc"',        'Flick.toString("abc")');
-    equal(Flick.toString(Flick.atom("abc")),        "abc",          "Flick.toString(ErlAtom(abc))");
-    equal(Flick.toString(Flick.atom("Xy")),         "'Xy'",         "Flick.toString(ErlAtom('Xy'))");
-    equal(Flick.toString(Flick.binary([1,2,3])),    "<<1,2,3>>",    "Flick.toString(ErlBinary(<<1,2,3>>))");
-    equal(Flick.toString(Flick.binary([65,66,67])), '<<"ABC">>',    'Flick.toString(ErlBinary(<<"ABC">>)');
-    equal(Flick.toString(Flick.binary([1,2,3]), {compact: true}),    "`1,2,3`",  "Flick.toString(ErlBinary(<<1,2,3>>), {compact: true})");
-    equal(Flick.toString(Flick.binary([65,66,67]), {compact: true}), '`ABC`',    'Flick.toString(ErlBinary(<<"ABC">>), {compact: true}');
-    equal(Flick.toString(undefined),              "undefined",    "Flick.toString(undefined)");
-    equal(Flick.toString(null),                   "null",         "Flick.toString(null)");
-    equal(Flick.toString(Flick.atom("nil")),        "nil",          "Flick.toString(nil)");
-    equal(Flick.toString(true),                   "true",         "Flick.toString(Boolean)");
-    equal(Flick.toString(123456),                 "123456",       "Flick.toString(Int)");
-    equal(Flick.toString(123.456),                "123.456",      "Flick.toString(Float)");
-    equal(Flick.toString(Flick.pid("a@b",1,2,3)),   "#pid{a@b,1,2}", "Flick.toString(Pid)");
-    equal(Flick.toString(Flick.ref("a@b",0,[1,2,3])),"#ref{a@b,1,2,3}", "Flick.toString(Ref)");
-    equal(Flick.toString(Flick.tuple(1,"abc",[])),  '{1,"abc",[]}', "Flick.toString(ErlTuple)");
-    equal(Flick.toString([1,"a",[],Flick.tuple(1,Flick.atom('b'))]), '[1,"a",[],{1,b}]', "Flick.toString(List)");
-    equal(Flick.toString({a:1, b:[1,2], c:"abc"}), '[{a,1},{b,[1,2]},{c,"abc"}]', "Flick.toString(PropList)");
+    equal(Flick.toString("abc"),                      '"abc"',           'Flick.toString("abc")');
+    equal(Flick.toString(Flick.atom("abc")),          "abc",             "Flick.toString(ErlAtom(abc))");
+    equal(Flick.toString(Flick.atom("Xy")),           "'Xy'",            "Flick.toString(ErlAtom('Xy'))");
+    equal(Flick.toString(Flick.binary([1,2,3])),      "<<1,2,3>>",       "Flick.toString(ErlBinary(<<1,2,3>>))");
+    equal(Flick.toString(Flick.binary([65,66,67])),   '<<"ABC">>',       'Flick.toString(ErlBinary(<<"ABC">>)');
+    equal(Flick.toString(Flick.binary([1,2,3]),       {compact: true}),  "`1,2,3`",  "Flick.toString(ErlBinary(<<1,2,3>>), {compact: true})");
+    equal(Flick.toString(Flick.binary([65,66,67]),    {compact: true}),  '`ABC`',    'Flick.toString(ErlBinary(<<"ABC">>), {compact: true}');
+    equal(Flick.toString(undefined),                  "undefined",       "Flick.toString(undefined)");
+    equal(Flick.toString(null),                       "null",            "Flick.toString(null)");
+    equal(Flick.toString(Flick.atom("nil")),          "nil",             "Flick.toString(nil)");
+    equal(Flick.toString(true),                       "true",            "Flick.toString(Boolean)");
+    equal(Flick.toString(123456),                     "123456",          "Flick.toString(Int)");
+    equal(Flick.toString(123.456),                    "123.456",         "Flick.toString(Float)");
+    equal(Flick.toString(Flick.pid("a@b",1,2,3)),     "#pid{a@b,1,2}",   "Flick.toString(Pid)");
+    equal(Flick.toString(Flick.ref("a@b",0,[1,2,3])), "#ref{a@b,1,2,3}", "Flick.toString(Ref)");
+    equal(Flick.toString(Flick.tuple(1,"abc",[])),    '{1,"abc",[]}',    "Flick.toString(ErlTuple)");
+    equal(Flick.toString([1,"a",[],Flick.tuple(1,Flick.atom('b'))]),     '[1,"a",[],{1,b}]', "Flick.toString(List)");
+    equal(Flick.toString({a:1, b:[1,2], c:"abc"}),    '[{a,1},{b,[1,2]},{c,"abc"}]', "Flick.toString(PropList)");
 }
